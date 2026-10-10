@@ -1,11 +1,8 @@
-# Log e cronologia download (dati locali)
-log/
-
-# File multimediali scaricati
-downloads/
-
-# Configurazione locale (puo' contenere percorsi personali)
-config.json
+# Contenuto di log/ e downloads/ (dati locali), ma non le cartelle stesse
+log/*
+!log/.gitkeep
+downloads/*
+!downloads/.gitkeep
 
 # File temporanei di yt-dlp
 *.part
