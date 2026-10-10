@@ -1,0 +1,15 @@
+# Log e cronologia download (dati locali)
+log/
+
+# File multimediali scaricati
+downloads/
+
+# Configurazione locale (puo' contenere percorsi personali)
+config.json
+
+# File temporanei di yt-dlp
+*.part
+*.ytdl
+*.temp
+*.tmp
+*.__converting__.*

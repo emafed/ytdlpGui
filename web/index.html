@@ -1,0 +1,2335 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ytdlpGui</title>
+  <style>
+    :root {
+      --bg-primary: #0f1117;
+      --bg-secondary: #181b24;
+      --bg-card: #202430;
+      --bg-hover: #2a3040;
+      --accent-primary: #6366f1;
+      --accent-hover: #4f46e5;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #2d3345;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 18px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent-primary);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+
+    .brand-text h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-hover);
+      border-color: #4b5563;
+    }
+
+    /* Tab Bar */
+    .tab-bar {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      padding: 8px 4px 0;
+      border-bottom: 1px solid var(--border-color);
+      overflow-x: auto;
+      overflow-y: visible;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: transparent;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .tabs-list {
+      display: flex;
+      gap: 4px;
+      flex: 1;
+      align-items: flex-end;
+      min-height: 44px;
+    }
+
+    .tab {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 8px 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      max-width: 240px;
+      min-width: 120px;
+      overflow: hidden;
+      transition: background 0.15s, color 0.15s;
+      user-select: none;
+    }
+
+    .tab:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    .tab.active {
+      background: var(--bg-secondary);
+      border-color: var(--accent-primary);
+      color: var(--text-main);
+    }
+
+    .tab-status {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: #4b5563;
+    }
+
+    .tab-status.idle { background: #4b5563; }
+    .tab-status.downloading { background: #3b82f6; animation: pulse 1.2s infinite; }
+    .tab-status.converting { background: #f59e0b; animation: pulse 1.2s infinite; }
+    .tab-status.completed { background: #22c55e; }
+    .tab-status.failed { background: #ef4444; }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .tab-percent {
+      font-size: 0.72rem;
+      font-weight: 700;
+      font-family: monospace;
+      flex-shrink: 0;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .tab-percent.converting {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+
+    .tab-percent.done {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+
+    .tab-percent.err {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+
+    .tab-close {
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .tab-close:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .tab-track {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      height: 3px;
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .tab-fill {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: var(--accent-primary);
+      transition: width 0.3s;
+    }
+
+    .tab.active .tab-track { background: var(--bg-hover); }
+
+    .tab-add {
+      background: var(--accent-primary);
+      color: #fff;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-md);
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-bottom: 6px;
+      transition: background 0.2s;
+    }
+
+    .tab-add:hover {
+      background: var(--accent-hover);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    .tab-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .tab-panel.hidden { display: none; }
+
+    /* Cards */
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow);
+    }
+
+    .input-form {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .url-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .url-input:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .btn-primary {
+      background: var(--accent-primary);
+      color: #fff;
+      border: none;
+      padding: 14px 28px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .input-action-btn {
+      width: auto;
+      min-width: 52px;
+      padding: 0 16px;
+      gap: 8px;
+      flex-shrink: 0;
+      justify-content: center;
+    }
+
+    .btn-svg {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 0;
+    }
+
+    /* Video Meta Info Card */
+    .video-info {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .video-thumb {
+      width: 180px;
+      height: 102px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: #000;
+      flex-shrink: 0;
+    }
+
+    .video-details {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .video-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
+    .video-meta-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-gray {
+      background: #374151;
+      color: #e5e7eb;
+    }
+
+    .badge-audio {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-video {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+    }
+
+    /* Section Tabs */
+    .section-tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      padding: 10px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn.active {
+      color: var(--accent-primary);
+      border-bottom-color: var(--accent-primary);
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--text-main);
+    }
+
+    /* Filter Controls */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .filter-group {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pill-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-main);
+    }
+
+    .pill-btn.active {
+      background: var(--accent-primary);
+      color: #fff;
+      border-color: var(--accent-primary);
+    }
+
+    .search-filter {
+      padding: 7px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      width: 220px;
+      outline: none;
+    }
+
+    .search-filter:focus {
+      border-color: var(--accent-primary);
+    }
+
+    .select-filter {
+      padding: 7px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    /* Table */
+    .table-container {
+      max-height: 440px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #191c26;
+      color: var(--text-muted);
+      padding: 12px 14px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+    }
+
+    tbody tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover {
+      background: rgba(99, 102, 241, 0.08);
+    }
+
+    tbody tr.selected {
+      background: rgba(99, 102, 241, 0.2) !important;
+      border-left: 3px solid var(--accent-primary);
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      vertical-align: middle;
+    }
+
+    .format-id-cell {
+      font-weight: 700;
+      font-family: monospace;
+      color: #a5b4fc;
+    }
+
+    .cli-pre {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: Consolas, monospace;
+      font-size: 0.82rem;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      max-height: 440px;
+      overflow-y: auto;
+    }
+
+    /* Download Setup Section */
+    .download-section {
+      margin-top: 24px;
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .download-mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .mode-card {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .mode-card.selected {
+      border-color: var(--accent-primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+
+    .mode-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mode-card-header input[type="radio"] {
+      accent-color: var(--accent-primary);
+      transform: scale(1.2);
+    }
+
+    .mode-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .mode-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .mode-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+
+    .option-row label {
+      color: var(--text-muted);
+    }
+
+    .option-select {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .cmd-preview {
+      background: #090b10;
+      border: 1px solid #1f2433;
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: Consolas, monospace;
+      font-size: 0.82rem;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .action-info {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .action-info strong {
+      color: #a5b4fc;
+    }
+
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .transfer-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .transfer-option input[type="checkbox"] {
+      accent-color: var(--accent-primary);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .transfer-option.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .transfer-option.disabled input[type="checkbox"] {
+      cursor: not-allowed;
+    }
+
+    /* Progress and Output Section */
+    .progress-box {
+      margin-top: 20px;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .progress-status {
+      font-weight: 600;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      background: var(--bg-card);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-primary);
+      transition: width 0.3s ease, background 0.3s ease;
+    }
+
+    .progress-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      padding: 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .log-terminal {
+      background: #080a0f;
+      border: 1px solid #1c212e;
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      max-height: 180px;
+      overflow-y: auto;
+      font-family: Consolas, monospace;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-line {
+      white-space: pre-wrap;
+    }
+
+    .log-line.error { color: #f87171; }
+    .log-line.success { color: #4ade80; }
+    .log-line.info { color: #60a5fa; }
+
+    /* Utilities */
+    .hidden { display: none !important; }
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      color: #fca5a5;
+    }
+
+    .alert-success {
+      background: rgba(34, 197, 94, 0.15);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      color: #86efac;
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .input-form { flex-direction: column; }
+      .btn-primary { width: 100%; justify-content: center; }
+      .video-info { flex-direction: column; }
+      .video-thumb { width: 100%; height: auto; aspect-ratio: 16/9; }
+      .progress-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* Update Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .modal-versions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+
+    .modal-version-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+    }
+
+    .modal-version-row .label {
+      color: var(--text-muted);
+    }
+
+    .modal-version-row .value {
+      font-weight: 600;
+      font-family: monospace;
+    }
+
+    .modal-version-row .value.current {
+      color: var(--warning);
+    }
+
+    .modal-version-row .value.latest {
+      color: var(--success);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn-update {
+      background: var(--success);
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn-update:hover:not(:disabled) {
+      background: #16a34a;
+    }
+
+    .btn-update:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-close-modal {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 10px 22px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-close-modal:hover {
+      background: var(--bg-hover);
+    }
+
+    .modal-output {
+      background: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-family: Consolas, monospace;
+      font-size: 0.8rem;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .modal-result-success {
+      color: var(--success);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-result-error {
+      color: var(--danger);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      font-family: monospace;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .version-badge:hover {
+      background: rgba(34, 197, 94, 0.25);
+    }
+
+    .version-badge.no-update {
+      background: rgba(156, 163, 175, 0.1);
+      color: var(--text-muted);
+      border-color: var(--border-color);
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3v12"></path>
+            <path d="M7 10l5 5 5-5"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>ytdlpGui</h1>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="versionBadge" class="version-badge no-update" title="Controllo versione..." style="display: none;">
+          ...
+        </span>
+      </div>
+    </header>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+      <div class="tabs-list" id="tabsList"></div>
+      <button class="tab-add" id="btnAddTab" title="Nuova scheda di download">+</button>
+    </div>
+
+    <!-- Tab panels container -->
+    <div id="tabPanels"></div>
+  </div>
+
+  <!-- Update Modal -->
+  <div id="updateModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-title">Aggiornamento yt-dlp disponibile</div>
+      <p style="color: var(--text-muted); font-size: 0.88rem;">
+        È disponibile una nuova versione stabile di yt-dlp. Vuoi aggiornare ora?
+      </p>
+      <div class="modal-versions">
+        <div class="modal-version-row">
+          <span class="label">Versione installata:</span>
+          <span class="value current" id="modalCurrentVer">-</span>
+        </div>
+        <div class="modal-version-row">
+          <span class="label">Ultima versione stabile:</span>
+          <span class="value latest" id="modalLatestVer">-</span>
+        </div>
+      </div>
+      <div id="updateResultArea" class="hidden"></div>
+      <div id="updateOutputArea" class="hidden">
+        <pre id="updateOutput" class="modal-output"></pre>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-close-modal" id="btnCloseModal">Chiudi</button>
+        <button class="btn-update" id="btnDoUpdate">
+          <span id="updateSpinner" class="spinner hidden"></span>
+          <span id="updateBtnText">Aggiorna</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab Template (cloned for each tab) -->
+  <template id="tabTemplate">
+    <div class="tab-panel">
+      <!-- URL Input Card -->
+      <div class="card">
+        <div class="input-form">
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="urlInput"
+              class="url-input"
+              placeholder="Incolla qui il link di YouTube (es. https://www.youtube.com/watch?v=...)"
+              autocomplete="off"
+              spellcheck="false"
+            />
+          </div>
+          <button class="btn-primary input-action-btn" id="btnAnalyze" type="button" title="Analizza formati">
+            <span id="analyzeSpinner" class="spinner hidden"></span>
+            <span id="analyzeText" class="btn-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="M21 21l-4.3-4.3"></path>
+              </svg>
+            </span>
+          </button>
+          <button class="btn-secondary input-action-btn" id="btnResetWorkflow" type="button" title="Reimposta scheda">
+            <span class="btn-svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                <path d="M22 21H7"></path>
+                <path d="m5 11 9 9"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+        <div id="errorAlert" class="alert alert-danger hidden" style="margin-top: 14px;"></div>
+      </div>
+
+      <!-- Main Content Area (Displayed after analysis) -->
+      <div id="analysisSection" class="card hidden">
+
+        <!-- Video Details Header -->
+        <div class="video-info">
+          <img id="videoThumb" class="video-thumb" src="" alt="Thumbnail" />
+          <div class="video-details">
+            <div id="videoTitle" class="video-title">Titolo del Video</div>
+            <div class="video-meta-badges">
+              <span class="badge badge-gray" id="badgeUploader">Canale: -</span>
+              <span class="badge badge-gray" id="badgeDuration">Durata: -</span>
+              <span class="badge badge-gray" id="badgeViews">Visualizzazioni: -</span>
+              <span class="badge badge-gray" id="badgeFormatsCount">Formati trovati: 0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs: Structured vs Raw -->
+        <div class="section-tabs">
+          <button class="tab-btn active" id="tabStructured">
+            Tabella Formati
+          </button>
+          <button class="tab-btn" id="tabRaw">
+            Output CLI
+          </button>
+        </div>
+
+        <!-- Tab Content: Structured Table & Filters -->
+        <div id="structuredContent">
+          <div class="filter-bar">
+            <div class="filter-group">
+              <button class="pill-btn active" data-type="all">Tutti</button>
+              <button class="pill-btn" data-type="audio">Audio</button>
+              <button class="pill-btn" data-type="video">Video</button>
+            </div>
+
+            <div class="filter-group">
+              <select id="extFilter" class="select-filter">
+                <option value="all">Tutte le estensioni</option>
+              </select>
+              <input
+                type="text"
+                id="searchFilter"
+                class="search-filter"
+                placeholder="Cerca ID, codec, note..."
+              />
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 40px;">Sel.</th>
+                  <th>ID Formato</th>
+                  <th>Est.</th>
+                  <th>Tipo</th>
+                  <th>Risoluzione</th>
+                  <th>FPS</th>
+                  <th>Bitrate</th>
+                  <th>Codec (A/V)</th>
+                  <th>Dimensione</th>
+                  <th>Info Extra / Note</th>
+                </tr>
+              </thead>
+              <tbody id="formatsTbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab Content: Raw CLI Output -->
+        <div id="rawContent" class="hidden">
+          <pre id="rawCliPre" class="cli-pre">Caricamento output...</pre>
+        </div>
+
+        <!-- Download Configuration & Actions -->
+        <div class="download-section">
+          <div class="section-title">
+            Opzioni di Download & Conversione
+          </div>
+
+          <div class="download-mode-grid">
+            <div class="mode-card selected" id="modeAudioCard">
+              <div class="mode-card-header">
+                <input type="radio" id="radioAudio" name="downloadMode" value="audio" checked />
+                <label for="radioAudio" class="mode-title">Audio</label>
+              </div>
+              <p class="mode-desc">
+                Estrae l'audio e lo converte nel formato desiderato (es. MP3 a 64K o altra qualità).
+              </p>
+              <div class="mode-options">
+                <div class="option-row">
+                  <label for="selectAudioFormat">Formato File:</label>
+                  <select id="selectAudioFormat" class="option-select">
+                    <option value="mp3" selected>MP3 (Consigliato)</option>
+                    <option value="m4a">M4A (Apple / AAC)</option>
+                    <option value="opus">OPUS (Alta efficienza)</option>
+                    <option value="wav">WAV (Lossless non compresso)</option>
+                    <option value="flac">FLAC (Lossless compresso)</option>
+                    <option value="aac">AAC</option>
+                  </select>
+                </div>
+                <div class="option-row">
+                  <label for="selectAudioQuality">Qualità Bitrate:</label>
+                  <select id="selectAudioQuality" class="option-select">
+                    <option value="64K">64K (Leggero, ideale podcast)</option>
+                    <option value="128K" selected>128K (Standard)</option>
+                    <option value="192K">192K (Buona)</option>
+                    <option value="256K">256K (Molto alta)</option>
+                    <option value="320K">320K (Massima qualità MP3)</option>
+                    <option value="0">Best VBR (Qualità variabile 0)</option>
+                  </select>
+                </div>
+                <div class="option-row">
+                  <label for="selectAudioSource">Stream Sorgente:</label>
+                  <select id="selectAudioSource" class="option-select">
+                    <option value="selected" selected>Usa formato selezionato nella tabella</option>
+                    <option value="bestaudio">Automatico: Miglior audio (ba/bestaudio)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mode-card hidden" id="modeVideoCard">
+              <div class="mode-card-header">
+                <input type="radio" id="radioVideo" name="downloadMode" value="video" />
+                <label for="radioVideo" class="mode-title">Video</label>
+              </div>
+              <p class="mode-desc">
+                Scarica il video. Se selezioni un formato solo video, unirà automaticamente l'audio migliore con ffmpeg.
+              </p>
+              <div class="mode-options">
+                <div class="option-row">
+                  <label for="selectVideoPreset">Scelta flusso:</label>
+                  <select id="selectVideoPreset" class="option-select">
+                    <option value="selected" selected>Usa formato selezionato nella tabella</option>
+                    <option value="best_mp4">Miglior Video MP4 + Miglior Audio</option>
+                    <option value="best_any">Miglior Video Assoluto + Miglior Audio</option>
+                  </select>
+                </div>
+                <div class="option-row">
+                  <label for="selectContainer">Contenitore finale:</label>
+                  <select id="selectContainer" class="option-select">
+                    <option value="mp4" selected>MP4</option>
+                    <option value="mkv">MKV</option>
+                    <option value="webm">WEBM</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label style="font-size: 0.78rem; color: var(--text-muted); display: block; margin-bottom: 4px;">
+              Anteprima comando yt-dlp eseguito:
+            </label>
+            <div id="cmdPreview" class="cmd-preview">yt-dlp ...</div>
+          </div>
+
+          <div class="action-row">
+            <div class="action-info">
+              Formato selezionato: <strong id="selectedFormatLabel">Nessuno (seleziona dalla tabella)</strong>
+            </div>
+            <div class="action-buttons">
+              <label class="transfer-option" title="Sposta il file nella cartella configurata in config.json">
+                <input type="checkbox" id="chkTransfer" />
+                <span>Trasferisci al termine</span>
+              </label>
+              <button class="btn-primary" id="btnDownload">
+                <span id="downloadSpinner" class="spinner hidden"></span>
+                <span id="downloadBtnText">Scarica Ora</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Download Progress & Log Box -->
+        <div id="progressBox" class="progress-box hidden">
+          <div class="progress-header">
+            <div class="progress-status" id="progressStatus">
+              <span class="spinner" id="progressSpinner"></span>
+              <span id="statusText">Download in corso...</span>
+            </div>
+            <button class="btn-secondary" id="btnToggleLogs" style="font-size: 0.75rem; padding: 4px 10px;">
+              Mostra / Nascondi Log
+            </button>
+          </div>
+
+          <div class="progress-track">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+
+          <div class="progress-stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Avanzamento</div>
+              <div class="stat-val" id="statPercent">0%</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Velocità</div>
+              <div class="stat-val" id="statSpeed">--</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Tempo Stimato (ETA)</div>
+              <div class="stat-val" id="statEta">--</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Dimensione Totale</div>
+              <div class="stat-val" id="statTotalSize">--</div>
+            </div>
+          </div>
+
+          <div id="logTerminal" class="log-terminal">
+            <!-- Streamed terminal lines -->
+          </div>
+
+          <div id="successBanner" class="alert alert-success hidden">
+            <div id="successMessage">Processo completato con successo</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </template>
+
+  <script>
+    // ===== Utilities =====
+    function formatDuration(sec) {
+      if (!sec) return 'Sconosciuta';
+      const s = Math.floor(sec);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const remSec = s % 60;
+      if (h > 0) {
+        return `${h}:${m.toString().padStart(2, '0')}:${remSec.toString().padStart(2, '0')}`;
+      }
+      return `${m}:${remSec.toString().padStart(2, '0')}`;
+    }
+
+    function formatFilesize(bytes) {
+      if (!bytes) return '--';
+      if (bytes < 1024) return bytes + ' B';
+      const kb = bytes / 1024;
+      if (kb < 1024) return kb.toFixed(1) + ' KiB';
+      const mb = kb / 1024;
+      if (mb < 1024) return mb.toFixed(2) + ' MiB';
+      const gb = mb / 1024;
+      return gb.toFixed(2) + ' GiB';
+    }
+
+    function escapeHtml(str) {
+      return String(str == null ? '' : str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getFormatType(f) {
+      const hasVideo = f.vcodec && f.vcodec !== 'none';
+      const hasAudio = f.acodec && f.acodec !== 'none';
+      if (hasAudio && !hasVideo) return 'audio';
+      if (hasVideo && !hasAudio) return 'video';
+      if (hasVideo && hasAudio) return 'muxed';
+      if (f.resolution === 'audio only') return 'audio';
+      return 'video';
+    }
+
+    function statusLabel(status) {
+      switch (status) {
+        case 'downloading': return 'Download in corso';
+        case 'converting': return 'Conversione in corso';
+        case 'completed': return 'Completato';
+        case 'failed': return 'Fallito';
+        default: return 'In attesa';
+      }
+    }
+
+    // Progresso complessivo 0-100 calcolato dal server: se e' prevista la
+    // conversione il download occupa il primo 50% e la conversione il restante
+    // 50%, cosi' la barra va una sola volta da 0 a 100.
+    function getOverallPercent(data) {
+      return Number(data.overallPercent) || 0;
+    }
+
+    // ===== App state =====
+    const app = {
+      tabs: [],
+      activeId: null
+    };
+
+    let transferEnabled = false;
+
+    function updateDocumentTitle() {
+      const actives = app.tabs
+        .filter(t => t.status === 'downloading' || t.status === 'converting')
+        .slice(0, 3);
+      if (actives.length === 0) {
+        document.title = 'ytdlpGui';
+      } else {
+        document.title = 'ytdlpGui - ' + actives.map(t => Math.round(Number(t.percent) || 0) + '%').join(' | ');
+      }
+    }
+
+    let tabCounter = 0;
+    function newTabId() {
+      tabCounter += 1;
+      return 't' + tabCounter + '_' + Date.now().toString(36);
+    }
+
+    const tabTemplate = document.getElementById('tabTemplate');
+    const tabsListEl = document.getElementById('tabsList');
+    const tabPanelsEl = document.getElementById('tabPanels');
+
+    // ===== Tab creation =====
+    function createTab() {
+      const id = newTabId();
+
+      const frag = tabTemplate.content.cloneNode(true);
+      const panel = frag.firstElementChild;
+      panel.id = 'panel-' + id;
+
+      const els = {};
+      els.panel = panel;
+      panel.querySelectorAll('[id]').forEach(el => {
+        const origId = el.id;
+        el.id = origId + '-' + id;
+        els[origId] = el;
+      });
+
+      // Rende unici i `for` delle label e i `name` dei radio group,
+      // cosi' le schede non interferiscono tra loro.
+      panel.querySelectorAll('label[for]').forEach(label => {
+        label.setAttribute('for', label.getAttribute('for') + '-' + id);
+      });
+      panel.querySelectorAll('input[name="downloadMode"]').forEach(input => {
+        input.setAttribute('name', 'downloadMode-' + id);
+      });
+
+      tabPanelsEl.appendChild(panel);
+
+      const state = {
+        formats: [],
+        selectedFormatId: null,
+        selectedFormatKind: null,
+        activeTypeFilter: 'all',
+        activeExtFilter: 'all',
+        searchQuery: '',
+        downloadMode: 'audio',
+        currentTaskId: null
+      };
+
+      const tab = {
+        id: id,
+        panel: panel,
+        els: els,
+        state: state,
+        pollInterval: null,
+        pollErrors: 0,
+        lastLogCount: 0,
+        title: 'Nuova scheda',
+        status: 'idle',
+        percent: 0
+      };
+
+      app.tabs.push(tab);
+      bindTabEvents(tab);
+      applyTransferAvailability(tab);
+      renderTabBar();
+      activateTab(id);
+
+      return tab;
+    }
+
+    // ===== Tab bar rendering =====
+    function renderTabBar() {
+      tabsListEl.innerHTML = '';
+      app.tabs.forEach(tab => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (tab.id === app.activeId ? ' active' : '');
+        el.dataset.tabId = tab.id;
+        el.innerHTML = `
+          <span class="tab-status ${tab.status}" id="tabStatus-${tab.id}"></span>
+          <span class="tab-title" id="tabTitle-${tab.id}">${escapeHtml(tab.title)}</span>
+          <span class="tab-percent hidden" id="tabPercent-${tab.id}"></span>
+          <button class="tab-close" data-close="${tab.id}" title="Chiudi scheda">×</button>
+          <span class="tab-track" id="tabTrack-${tab.id}"><span class="tab-fill" id="tabFill-${tab.id}"></span></span>
+        `;
+        el.addEventListener('click', (e) => {
+          if (e.target.dataset.close) {
+            closeTab(e.target.dataset.close);
+            return;
+          }
+          activateTab(tab.id);
+        });
+        tabsListEl.appendChild(el);
+      });
+    }
+
+    function updateTabLabel(tab) {
+      const statusEl = document.getElementById('tabStatus-' + tab.id);
+      const titleEl = document.getElementById('tabTitle-' + tab.id);
+      const pctEl = document.getElementById('tabPercent-' + tab.id);
+      const trackEl = document.getElementById('tabTrack-' + tab.id);
+      const fillEl = document.getElementById('tabFill-' + tab.id);
+      if (!statusEl) return;
+
+      titleEl.textContent = tab.title;
+      statusEl.className = 'tab-status ' + tab.status;
+      statusEl.title = statusLabel(tab.status);
+
+      const active = tab.status === 'downloading' || tab.status === 'converting';
+      if (active) {
+        const pct = Math.max(0, Math.min(100, Number(tab.percent) || 0));
+        fillEl.style.width = pct + '%';
+        pctEl.classList.remove('hidden', 'done', 'err', 'converting');
+        if (tab.status === 'converting') pctEl.classList.add('converting');
+        pctEl.textContent = pct.toFixed(0) + '%';
+        trackEl.classList.remove('hidden');
+      } else if (tab.status === 'completed') {
+        fillEl.style.width = '100%';
+        pctEl.classList.remove('hidden', 'converting', 'err');
+        pctEl.classList.add('done');
+        pctEl.textContent = '✓';
+        trackEl.classList.add('hidden');
+      } else if (tab.status === 'failed') {
+        pctEl.classList.remove('hidden', 'converting', 'done');
+        pctEl.classList.add('err');
+        pctEl.textContent = '✗';
+        trackEl.classList.add('hidden');
+      } else {
+        pctEl.classList.add('hidden');
+        trackEl.classList.add('hidden');
+      }
+      updateDocumentTitle();
+    }
+
+    function activateTab(id) {
+      app.activeId = id;
+      app.tabs.forEach(tab => {
+        tab.panel.classList.toggle('hidden', tab.id !== id);
+      });
+      document.querySelectorAll('.tab[data-tab-id]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tabId === id);
+      });
+      updateDocumentTitle();
+    }
+
+    function closeTab(id) {
+      const idx = app.tabs.findIndex(t => t.id === id);
+      if (idx < 0) return;
+      const tab = app.tabs[idx];
+
+      if (tab.status === 'downloading' || tab.status === 'converting') {
+        const ok = confirm('Il download è ancora in corso. Chiudere la scheda?\n\nNota: il download continuerà in background sul server.');
+        if (!ok) return;
+      }
+
+      if (tab.pollInterval) {
+        clearInterval(tab.pollInterval);
+        tab.pollInterval = null;
+      }
+      tab.panel.remove();
+      app.tabs.splice(idx, 1);
+
+      if (app.tabs.length === 0) {
+        createTab();
+        return;
+      }
+
+      if (app.activeId === id) {
+        const next = app.tabs[Math.max(0, idx - 1)];
+        activateTab(next.id);
+        renderTabBar();
+      } else {
+        renderTabBar();
+      }
+      updateDocumentTitle();
+    }
+
+    // ===== Per-tab event binding =====
+    function bindTabEvents(tab) {
+      const els = tab.els;
+      const state = tab.state;
+
+      function showError(msg) {
+        els.errorAlert.textContent = msg;
+        els.errorAlert.classList.remove('hidden');
+      }
+
+      function hideError() {
+        els.errorAlert.textContent = '';
+        els.errorAlert.classList.add('hidden');
+      }
+
+      // Enter key triggers analysis
+      els.urlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          els.btnAnalyze.click();
+        }
+      });
+
+      els.btnResetWorkflow.addEventListener('click', () => resetWorkflow(tab));
+
+      // Structured vs Raw content tabs
+      els.tabStructured.addEventListener('click', () => {
+        els.tabStructured.classList.add('active');
+        els.tabRaw.classList.remove('active');
+        els.structuredContent.classList.remove('hidden');
+        els.rawContent.classList.add('hidden');
+      });
+
+      els.tabRaw.addEventListener('click', () => {
+        els.tabRaw.classList.add('active');
+        els.tabStructured.classList.remove('active');
+        els.rawContent.classList.remove('hidden');
+        els.structuredContent.classList.add('hidden');
+      });
+
+      // Analyze URL
+      els.btnAnalyze.addEventListener('click', async () => {
+        const url = els.urlInput.value.trim();
+        if (!url) {
+          showError('Inserisci un link YouTube valido prima di continuare.');
+          return;
+        }
+        hideError();
+        els.analyzeSpinner.classList.remove('hidden');
+        els.btnAnalyze.disabled = true;
+        els.analyzeText.classList.add('hidden');
+
+        try {
+          const resp = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
+          if (!resp.ok) {
+            const errData = await resp.json().catch(() => ({}));
+            throw new Error(errData.error || `Errore server (${resp.status})`);
+          }
+          const data = await resp.json();
+          state.formats = (data.formats || []).filter(f => (f.ext || '').toLowerCase() !== 'mhtml');
+
+          fetch(`/api/raw-formats?url=${encodeURIComponent(url)}`)
+            .then(r => r.json())
+            .then(res => {
+              els.rawCliPre.textContent = res.raw || 'Nessun output grezzo disponibile.';
+            })
+            .catch(e => {
+              els.rawCliPre.textContent = 'Errore nel recupero dell\'output grezzo: ' + e.message;
+            });
+
+          renderVideoInfo(tab, data);
+          populateExtFilter(tab, state.formats);
+          renderFormatsTable(tab);
+
+          autoSelectFormat(tab);
+
+          els.analysisSection.classList.remove('hidden');
+          els.analysisSection.scrollIntoView({ behavior: 'smooth' });
+        } catch (err) {
+          showError('Errore durante l\'analisi del video: ' + err.message);
+        } finally {
+          els.analyzeSpinner.classList.add('hidden');
+          els.btnAnalyze.disabled = false;
+          els.analyzeText.classList.remove('hidden');
+        }
+      });
+
+      // Filter pills
+      els.panel.querySelectorAll('.pill-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          els.panel.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          state.activeTypeFilter = btn.dataset.type;
+          renderFormatsTable(tab);
+        });
+      });
+
+      els.extFilter.addEventListener('change', () => {
+        state.activeExtFilter = els.extFilter.value;
+        renderFormatsTable(tab);
+      });
+
+      els.searchFilter.addEventListener('input', () => {
+        state.searchQuery = els.searchFilter.value;
+        renderFormatsTable(tab);
+      });
+
+      els.radioAudio.addEventListener('change', () => {
+        if (els.radioAudio.checked) setDownloadMode(tab, 'audio');
+      });
+
+      els.radioVideo.addEventListener('change', () => {
+        if (els.radioVideo.checked) setDownloadMode(tab, 'video');
+      });
+
+      [els.selectAudioFormat, els.selectAudioQuality, els.selectAudioSource, els.selectVideoPreset, els.selectContainer].forEach(el => {
+        el.addEventListener('change', () => updateCmdPreviewOf(tab));
+      });
+
+      // Download
+      els.btnDownload.addEventListener('click', async () => {
+        const url = els.urlInput.value.trim();
+        if (!url) {
+          showError('Inserisci un link YouTube valido.');
+          return;
+        }
+        if (!state.selectedFormatId) {
+          const needsFormat =
+            (state.downloadMode === 'audio' && els.selectAudioSource.value === 'selected') ||
+            (state.downloadMode === 'video' && els.selectVideoPreset.value === 'selected');
+          if (needsFormat) {
+            showError('Seleziona un formato dalla tabella prima di scaricare.');
+            return;
+          }
+        }
+        hideError();
+        els.btnDownload.disabled = true;
+        els.downloadSpinner.classList.remove('hidden');
+        els.downloadBtnText.textContent = 'Avvio download...';
+
+        const body = {
+          url: url,
+          mode: state.downloadMode,
+          formatId: state.selectedFormatId,
+          formatKind: state.selectedFormatKind,
+          audioFormat: els.selectAudioFormat.value,
+          audioQuality: els.selectAudioQuality.value,
+          audioSource: els.selectAudioSource.value,
+          videoPreset: els.selectVideoPreset.value,
+          container: els.selectContainer.value,
+          transfer: !!(els.chkTransfer && els.chkTransfer.checked)
+        };
+
+        try {
+          const resp = await fetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await resp.json();
+          if (data.error) throw new Error(data.error);
+          if (!data.taskId) throw new Error('Nessun task ID ricevuto.');
+
+          state.currentTaskId = data.taskId;
+          tab.status = 'downloading';
+          tab.percent = 0;
+          updateTabLabel(tab);
+
+          els.progressBox.classList.remove('hidden');
+          els.successBanner.classList.add('hidden');
+          els.logTerminal.innerHTML = '';
+          els.logTerminal.classList.remove('hidden');
+          els.btnToggleLogs.textContent = 'Nascondi Log';
+          els.progressFill.style.width = '0%';
+          els.progressFill.style.background = '#6366f1';
+          els.statPercent.textContent = '0%';
+          els.statSpeed.textContent = '--';
+          els.statEta.textContent = '--';
+          els.statTotalSize.textContent = '--';
+          els.statusText.textContent = 'Download in corso...';
+          els.progressSpinner.classList.remove('hidden');
+
+          startPolling(tab);
+        } catch (err) {
+          showError('Errore avvio download: ' + err.message);
+          els.btnDownload.disabled = false;
+          els.downloadSpinner.classList.add('hidden');
+          els.downloadBtnText.textContent = 'Scarica Ora';
+        }
+      });
+
+      els.btnToggleLogs.addEventListener('click', () => {
+        els.logTerminal.classList.toggle('hidden');
+        const isHidden = els.logTerminal.classList.contains('hidden');
+        els.btnToggleLogs.textContent = isHidden ? 'Mostra Log' : 'Nascondi Log';
+      });
+
+      updateCmdPreviewOf(tab);
+    }
+
+    // ===== Format rendering (per tab) =====
+    function renderVideoInfo(tab, data) {
+      const els = tab.els;
+      els.videoTitle.textContent = data.title || 'Senza titolo';
+
+      let thumbUrl = data.thumbnail || '';
+      if (thumbUrl.startsWith('file://') || thumbUrl.match(/^[a-zA-Z]:\\/)) {
+        thumbUrl = '';
+      }
+      els.videoThumb.src = thumbUrl;
+      els.videoThumb.style.display = thumbUrl ? 'block' : 'none';
+
+      els.badgeUploader.textContent = 'Canale: ' + (data.uploader || data.channel || 'Sconosciuto');
+      els.badgeDuration.textContent = 'Durata: ' + formatDuration(data.duration);
+      els.badgeViews.textContent = 'Visualizzazioni: ' + (data.view_count ? data.view_count.toLocaleString('it-IT') : '--');
+      els.badgeFormatsCount.textContent = 'Formati trovati: ' + (data.formats ? data.formats.length : 0);
+
+      tab.title = data.title || 'Nuova scheda';
+      updateTabLabel(tab);
+    }
+
+    function populateExtFilter(tab, formats) {
+      const els = tab.els;
+      const exts = new Set();
+      formats.forEach(f => {
+        if (f.ext) exts.add(f.ext);
+      });
+      els.extFilter.innerHTML = '<option value="all">Tutte le estensioni</option>';
+      Array.from(exts).sort().forEach(ext => {
+        const opt = document.createElement('option');
+        opt.value = ext;
+        opt.textContent = ext.toUpperCase();
+        els.extFilter.appendChild(opt);
+      });
+    }
+
+    function autoSelectFormat(tab) {
+      const state = tab.state;
+      const preferred = state.formats.find(f => f.format_id === '140' || f.format_id === '140-1')
+        || state.formats.find(f => getFormatType(f) === 'audio')
+        || state.formats[0];
+
+      if (preferred) {
+        selectFormat(tab, preferred.format_id);
+      }
+    }
+
+    function setDownloadMode(tab, mode) {
+      const els = tab.els;
+      const isAudio = mode === 'audio';
+      tab.state.downloadMode = mode;
+      els.radioAudio.checked = isAudio;
+      els.radioVideo.checked = !isAudio;
+      els.modeAudioCard.classList.toggle('hidden', !isAudio);
+      els.modeAudioCard.classList.toggle('selected', isAudio);
+      els.modeVideoCard.classList.toggle('hidden', isAudio);
+      els.modeVideoCard.classList.toggle('selected', !isAudio);
+      updateCmdPreviewOf(tab);
+    }
+
+    function selectFormat(tab, id) {
+      const els = tab.els;
+      const state = tab.state;
+      state.selectedFormatId = id;
+      const f = state.formats.find(item => item.format_id === id);
+      if (f) {
+        const type = getFormatType(f);
+        state.selectedFormatKind = type;
+        const typeBadge = type === 'audio' ? 'Audio' : 'Video';
+        els.selectedFormatLabel.textContent = `ID: ${f.format_id} (${(f.ext || '').toUpperCase()} - ${typeBadge} - ${f.resolution || f.format_note || ''})`;
+        setDownloadMode(tab, type === 'audio' ? 'audio' : 'video');
+      } else {
+        state.selectedFormatKind = null;
+        els.selectedFormatLabel.textContent = id ? `ID: ${id}` : 'Nessuno';
+      }
+
+      els.formatsTbody.querySelectorAll('tr').forEach(row => {
+        if (row.dataset.formatId === id) {
+          row.classList.add('selected');
+          const radio = row.querySelector('input[type="radio"]');
+          if (radio) radio.checked = true;
+        } else {
+          row.classList.remove('selected');
+          const radio = row.querySelector('input[type="radio"]');
+          if (radio) radio.checked = false;
+        }
+      });
+
+      updateCmdPreviewOf(tab);
+    }
+
+    function renderFormatsTable(tab) {
+      const els = tab.els;
+      const state = tab.state;
+      els.formatsTbody.innerHTML = '';
+
+      const filtered = state.formats.filter(f => {
+        const type = getFormatType(f);
+        if (state.activeTypeFilter !== 'all') {
+          if (state.activeTypeFilter === 'audio' && type !== 'audio') return false;
+          if (state.activeTypeFilter === 'video' && type !== 'video' && type !== 'muxed') return false;
+        }
+        if (state.activeExtFilter !== 'all' && f.ext !== state.activeExtFilter) {
+          return false;
+        }
+        if (state.searchQuery) {
+          const q = state.searchQuery.toLowerCase();
+          const str = `${f.format_id} ${f.ext} ${f.resolution} ${f.vcodec} ${f.acodec} ${f.format_note} ${f.protocol}`.toLowerCase();
+          if (!str.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        els.formatsTbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 24px; color: var(--text-muted);">Nessun formato corrisponde ai filtri impostati.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(f => {
+        const type = getFormatType(f);
+        const tr = document.createElement('tr');
+        tr.dataset.formatId = f.format_id;
+        if (f.format_id === state.selectedFormatId) {
+          tr.classList.add('selected');
+        }
+
+        let typeBadge = type === 'audio'
+          ? '<span class="badge badge-audio">Audio</span>'
+          : '<span class="badge badge-video">Video</span>';
+
+        const bitrateParts = [];
+        if (f.abr) bitrateParts.push(`A:${Math.round(f.abr)}k`);
+        if (f.vbr) bitrateParts.push(`V:${Math.round(f.vbr)}k`);
+        if (bitrateParts.length === 0 && f.tbr) bitrateParts.push(`${Math.round(f.tbr)}k`);
+        const bitrateStr = bitrateParts.join(' / ') || '--';
+
+        const codecs = [];
+        if (f.vcodec && f.vcodec !== 'none') codecs.push(f.vcodec);
+        if (f.acodec && f.acodec !== 'none') codecs.push(f.acodec);
+        const codecStr = codecs.join(' + ') || 'none';
+
+        const size = formatFilesize(f.filesize || f.filesize_approx);
+        const formatId = escapeHtml(f.format_id);
+        const ext = escapeHtml(f.ext || '--');
+        const resolution = escapeHtml(f.resolution || (type === 'audio' ? 'Audio Only' : '--'));
+
+        tr.innerHTML = `
+          <td><input type="radio" name="formatRadio-${tab.id}" value="${formatId}" ${f.format_id === state.selectedFormatId ? 'checked' : ''}></td>
+          <td class="format-id-cell">${formatId}</td>
+          <td><span class="badge badge-gray">${ext}</span></td>
+          <td>${typeBadge}</td>
+          <td>${resolution}</td>
+          <td>${escapeHtml(f.fps || '--')}</td>
+          <td>${bitrateStr}</td>
+          <td style="font-family: monospace; font-size: 0.78rem;">${escapeHtml(codecStr)}</td>
+          <td>${size}</td>
+          <td style="color: var(--text-muted); font-size: 0.8rem;">${escapeHtml(f.format_note || f.protocol || '')}</td>
+        `;
+
+        tr.addEventListener('click', () => {
+          selectFormat(tab, f.format_id);
+        });
+
+        els.formatsTbody.appendChild(tr);
+      });
+    }
+
+    // Updates the command preview using the current tab state.
+    function updateCmdPreviewOf(tab) {
+      const els = tab.els;
+      const state = tab.state;
+      const url = els.urlInput.value.trim() || '<URL>';
+      let cmd = `yt-dlp -P downloads -o "%(title)s.%(ext)s"`;
+      if (state.downloadMode === 'audio') {
+        const src = els.selectAudioSource.value;
+        if (src === 'selected' && state.selectedFormatId) {
+          cmd += ` -f ${state.selectedFormatId}`;
+        } else {
+          cmd += ` -f ba/bestaudio`;
+        }
+        cmd += ` -x --audio-format ${els.selectAudioFormat.value} --audio-quality ${els.selectAudioQuality.value}`;
+      } else {
+        const preset = els.selectVideoPreset.value;
+        if (preset === 'best_mp4') {
+          cmd += ` -f "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b"`;
+        } else if (preset === 'best_any') {
+          cmd += ` -f "bv*+ba/b"`;
+        } else if (state.selectedFormatId) {
+          if (state.selectedFormatKind === 'muxed') {
+            cmd += ` -f "${state.selectedFormatId}/b"`;
+          } else {
+            cmd += ` -f "${state.selectedFormatId}+ba/b"`;
+          }
+        }
+        cmd += ` --merge-output-format ${els.selectContainer.value}`;
+      }
+      cmd += ` "${url}"`;
+      els.cmdPreview.textContent = cmd;
+    }
+
+    // ===== Download polling (per tab) =====
+    function startPolling(tab) {
+      tab.lastLogCount = 0;
+      tab.pollErrors = 0;
+      if (tab.pollInterval) clearInterval(tab.pollInterval);
+      tab.pollInterval = setInterval(() => pollProgress(tab), 1000);
+    }
+
+    function markDownloadFailed(tab, logs) {
+      const els = tab.els;
+      if (tab.pollInterval) {
+        clearInterval(tab.pollInterval);
+        tab.pollInterval = null;
+      }
+      tab.status = 'failed';
+      updateTabLabel(tab);
+      els.statusText.textContent = 'Download fallito!';
+      els.progressSpinner.classList.add('hidden');
+      els.progressFill.style.background = '#ef4444';
+      els.btnDownload.disabled = false;
+      els.downloadSpinner.classList.add('hidden');
+      els.downloadBtnText.textContent = 'Scarica Ora';
+      if (logs) appendLogs(tab, logs);
+    }
+
+    async function pollProgress(tab) {
+      const els = tab.els;
+      const taskId = tab.state.currentTaskId;
+      if (!taskId) return;
+
+      try {
+        const resp = await fetch(`/api/progress?id=${taskId}`);
+        const data = await resp.json();
+        tab.pollErrors = 0;
+
+        if (!resp.ok || data.error) {
+          if (data.error) tab.lastLogCount = 0;
+          markDownloadFailed(tab, data.error ? [data.error] : null);
+          return;
+        }
+
+        if (data.phase === 'failed') {
+          markDownloadFailed(tab, data.logs);
+          return;
+        }
+
+        if (data.phase === 'completed') {
+          clearInterval(tab.pollInterval);
+          tab.pollInterval = null;
+          tab.status = 'completed';
+          tab.percent = 100;
+          updateTabLabel(tab);
+          els.statusText.textContent = 'Completato!';
+          els.progressFill.style.width = '100%';
+          els.statPercent.textContent = '100%';
+          els.progressSpinner.classList.add('hidden');
+          els.btnDownload.disabled = false;
+          els.downloadSpinner.classList.add('hidden');
+          els.downloadBtnText.textContent = 'Scarica Ora';
+          appendLogs(tab, data.logs);
+          els.successBanner.classList.remove('hidden');
+          return;
+        }
+
+        const overall = getOverallPercent(data);
+
+        if (data.phase === 'converting') {
+          tab.status = 'converting';
+          tab.percent = overall;
+          updateTabLabel(tab);
+          els.statusText.textContent = `Conversione in corso... ${overall.toFixed(1)}%`;
+          els.progressFill.style.background = '#f59e0b';
+          els.progressFill.style.width = overall + '%';
+          els.statPercent.textContent = overall.toFixed(1) + '%';
+          els.statSpeed.textContent = '--';
+          els.statEta.textContent = '--';
+          els.progressSpinner.classList.remove('hidden');
+        } else {
+          tab.status = 'downloading';
+          tab.percent = overall;
+          updateTabLabel(tab);
+          if (overall > 0) {
+            els.progressFill.style.width = overall + '%';
+            els.statPercent.textContent = overall.toFixed(1) + '%';
+            els.progressFill.style.background = '#6366f1';
+          }
+          if (data.speed) els.statSpeed.textContent = data.speed;
+          if (data.eta) els.statEta.textContent = data.eta;
+          if (data.totalSize) els.statTotalSize.textContent = data.totalSize;
+          els.statusText.textContent = `Download in corso... ${overall > 0 ? overall.toFixed(1) + '%' : ''}`;
+        }
+
+        appendLogs(tab, data.logs);
+      } catch (err) {
+        // La rete puo' fallire temporaneamente: si riprova al tick successivo,
+        // ma dopo troppi errori consecutivi il task viene considerato perso.
+        tab.pollErrors += 1;
+        if (tab.pollErrors >= 10) {
+          markDownloadFailed(tab, ['Connessione al server persa durante il download.']);
+        }
+      }
+    }
+
+    function appendLogs(tab, logs) {
+      if (!logs || !logs.length) return;
+      const els = tab.els;
+      const newLines = logs.slice(tab.lastLogCount);
+      tab.lastLogCount = logs.length;
+      newLines.forEach(line => {
+        const div = document.createElement('div');
+        div.className = 'log-line';
+        if (line.includes('ERROR') || line.includes('error')) div.classList.add('error');
+        else if (line.includes('100%') || line.includes('[download] Destination')) div.classList.add('success');
+        else if (line.includes('[ExtractAudio]') || line.includes('[Merger]') || line.includes('[FixupM3u8]') || line.includes('[FixupFragmented]')) div.classList.add('info');
+        div.textContent = line;
+        els.logTerminal.appendChild(div);
+      });
+      els.logTerminal.scrollTop = els.logTerminal.scrollHeight;
+    }
+
+    // ===== Reset (per tab) =====
+    function resetWorkflow(tab) {
+      const els = tab.els;
+      const state = tab.state;
+
+      els.urlInput.value = '';
+      els.errorAlert.textContent = '';
+      els.errorAlert.classList.add('hidden');
+
+      state.formats = [];
+      state.selectedFormatId = null;
+      state.selectedFormatKind = null;
+      state.activeTypeFilter = 'all';
+      state.activeExtFilter = 'all';
+      state.searchQuery = '';
+      state.downloadMode = 'audio';
+      state.currentTaskId = null;
+
+      if (tab.pollInterval) {
+        clearInterval(tab.pollInterval);
+        tab.pollInterval = null;
+      }
+
+      els.panel.querySelectorAll('.pill-btn').forEach(b => {
+        if (b.dataset.type === 'all') b.classList.add('active');
+        else b.classList.remove('active');
+      });
+      els.searchFilter.value = '';
+      els.extFilter.innerHTML = '<option value="all">Tutte le estensioni</option>';
+
+      setDownloadMode(tab, 'audio');
+      els.selectAudioFormat.value = 'mp3';
+      els.selectAudioQuality.value = '128K';
+      els.selectAudioSource.value = 'selected';
+      els.selectVideoPreset.value = 'selected';
+      els.selectContainer.value = 'mp4';
+      els.selectedFormatLabel.textContent = 'Nessuno (seleziona dalla tabella)';
+
+      els.analysisSection.classList.add('hidden');
+      els.progressBox.classList.add('hidden');
+      els.successBanner.classList.add('hidden');
+
+      els.logTerminal.innerHTML = '';
+      els.logTerminal.classList.remove('hidden');
+      els.btnToggleLogs.textContent = 'Nascondi Log';
+      els.progressFill.style.width = '0%';
+      els.progressFill.style.background = 'linear-gradient(90deg, #6366f1, #10b981)';
+
+      els.statPercent.textContent = '0%';
+      els.statSpeed.textContent = '--';
+      els.statEta.textContent = '--';
+      els.statTotalSize.textContent = '--';
+
+      els.btnDownload.disabled = false;
+      els.downloadSpinner.classList.add('hidden');
+      els.downloadBtnText.textContent = 'Scarica Ora';
+
+      tab.title = 'Nuova scheda';
+      tab.status = 'idle';
+      tab.percent = 0;
+      updateTabLabel(tab);
+
+      updateCmdPreviewOf(tab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      els.urlInput.focus();
+    }
+
+    // ===== Global actions =====
+    function applyTransferAvailability(tab) {
+      const input = tab.els.chkTransfer;
+      if (!input) return;
+      const label = input.closest('.transfer-option');
+      input.disabled = !transferEnabled;
+      if (label) {
+        label.classList.toggle('disabled', !transferEnabled);
+        label.title = transferEnabled
+          ? 'Sposta il file al termine del download nella cartella configurata in config.json'
+          : 'Configura "transferDirectory" in config.json per abilitare il trasferimento';
+      }
+      if (!transferEnabled) input.checked = false;
+    }
+
+    async function checkTransferConfig() {
+      try {
+        const resp = await fetch('/api/config');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        transferEnabled = !!data.transferEnabled;
+        app.tabs.forEach(applyTransferAvailability);
+      } catch (e) {}
+    }
+
+    document.getElementById('btnAddTab').addEventListener('click', createTab);
+
+    // ===== Version check =====
+    async function checkVersion() {
+      try {
+        const resp = await fetch('/api/check-update');
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const badge = document.getElementById('versionBadge');
+        badge.style.display = 'inline-flex';
+        if (data.updateAvailable) {
+          badge.textContent = `Aggiorna a ${data.latestVersion}`;
+          badge.classList.remove('no-update');
+          badge.title = `Aggiornamento disponibile: ${data.latestVersion} (installata: ${data.currentVersion})`;
+          badge.addEventListener('click', () => openUpdateModal(data.currentVersion, data.latestVersion));
+        } else {
+          badge.textContent = `v${data.currentVersion}`;
+          badge.classList.add('no-update');
+          badge.title = `Versione aggiornata: ${data.currentVersion}`;
+        }
+      } catch (e) {}
+    }
+
+    function openUpdateModal(current, latest) {
+      document.getElementById('modalCurrentVer').textContent = current;
+      document.getElementById('modalLatestVer').textContent = latest;
+      document.getElementById('updateResultArea').classList.add('hidden');
+      document.getElementById('updateOutputArea').classList.add('hidden');
+      document.getElementById('updateModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnCloseModal').addEventListener('click', () => {
+      document.getElementById('updateModal').classList.add('hidden');
+    });
+    document.getElementById('updateModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('btnDoUpdate').addEventListener('click', async () => {
+      const btn = document.getElementById('btnDoUpdate');
+      const spinner = document.getElementById('updateSpinner');
+      const btnText = document.getElementById('updateBtnText');
+      btn.disabled = true;
+      spinner.classList.remove('hidden');
+      btnText.textContent = 'Aggiornamento in corso...';
+
+      try {
+        const resp = await fetch('/api/update', { method: 'POST' });
+        const data = await resp.json();
+        const resultArea = document.getElementById('updateResultArea');
+        const outputArea = document.getElementById('updateOutputArea');
+        const outputEl = document.getElementById('updateOutput');
+
+        outputArea.classList.remove('hidden');
+        outputEl.textContent = data.output || 'Nessun output.';
+
+        resultArea.classList.remove('hidden');
+        if (data.success) {
+          resultArea.innerHTML = '<div class="modal-result-success">Aggiornamento completato! Riavvia il server per usare la nuova versione.</div>';
+        } else {
+          resultArea.innerHTML = '<div class="modal-result-error">Aggiornamento fallito. Controlla l\'output qui sotto.</div>';
+        }
+      } catch (err) {
+        const resultArea = document.getElementById('updateResultArea');
+        resultArea.classList.remove('hidden');
+        resultArea.innerHTML = `<div class="modal-result-error">Errore: ${escapeHtml(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+        spinner.classList.add('hidden');
+        btnText.textContent = 'Aggiorna';
+      }
+    });
+
+    // ===== Bootstrap =====
+    createTab();
+    checkVersion();
+    checkTransferConfig();
+  </script>
+</body>
+</html>
